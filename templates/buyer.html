@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Try-On - Buyer</title>
+    <link rel="stylesheet" href="/static/css/styles.css?v=4">
+    <style>
+        .buyer-header {
+            text-align: center;
+            padding: 15px 0 10px;
+        }
+
+        .buyer-header h2 {
+            margin: 0;
+            font-size: 22px;
+            color: #e2e8f0;
+            letter-spacing: 0.5px;
+        }
+
+        .buyer-header p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Video area overlay buttons */
+        .overlay-actions {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+            z-index: 10;
+        }
+
+        .btn-gradient {
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 9px 18px;
+            border-radius: 22px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .btn-gradient:active {
+            transform: scale(0.96);
+        }
+
+        .btn-tryon {
+            background: linear-gradient(135deg, #ec4899, #f97316);
+        }
+
+        .btn-headmask {
+            background: rgba(30, 41, 59, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 12px;
+            padding: 7px 14px;
+        }
+
+        /* Garment Gallery */
+        .garment-gallery-container {
+            margin-top: 15px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            box-sizing: border-box;
+            display: none;
+        }
+
+        .garment-gallery-title {
+            color: #e2e8f0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .garment-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #475569 transparent;
+        }
+
+        .garment-list::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .garment-list::-webkit-scrollbar-thumb {
+            background-color: #475569;
+            border-radius: 3px;
+        }
+
+        .garment-thumb {
+            width: 70px;
+            height: 90px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            object-fit: contain;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .garment-thumb:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .garment-thumb.active {
+            border-color: #ec4899;
+            background: #fdf2f8;
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+        }
+
+        /* Size Estimator Card */
+        .estimator-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px auto 0;
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .estimator-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 16px;
+        }
+
+        .estimator-title span {
+            font-size: 20px;
+        }
+
+        /* Height input row */
+        .height-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .height-row label {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .height-input {
+            width: 58px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #334155;
+            color: white;
+            padding: 7px 4px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .height-input:focus {
+            border-color: #818cf8;
+        }
+
+        .height-unit {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Range slider */
+        .slider-container {
+            position: relative;
+            margin: 0 0 14px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #475569;
+            margin-top: 4px;
+            padding: 0 2px;
+        }
+
+        input[type="range"].height-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"].height-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #8b5cf6;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+            cursor: grab;
+        }
+
+        input[type="range"].height-slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #8b5cf6;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+            cursor: grab;
+        }
+
+        /* Scan button */
+        .btn-scan {
+            width: 100%;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-bottom: 6px;
+        }
+
+        .btn-scan:active {
+            transform: scale(0.98);
+        }
+
+        /* Status text */
+        .estimator-status {
+            font-size: 13px;
+            color: #fbbf24;
+            text-align: center;
+            margin: 6px 0;
+            min-height: 20px;
+            font-weight: 600;
+        }
+
+        /* Measurement grid */
+        .measure-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .measure-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .measure-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .measure-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .measure-value {
+            font-size: 16px;
+            color: #e2e8f0;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .measure-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Size cell highlight */
+        .measure-cell.size-cell {
+            background: rgba(139, 92, 246, 0.12);
+            border-color: rgba(139, 92, 246, 0.25);
+        }
+
+        .measure-cell.size-cell .measure-value {
+            color: #a78bfa;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="buyer-header">
+            <h2>🛍️ Buyer Studio</h2>
+            <p>Try outfits & find your perfect fit</p>
+        </div>
+
+        <div id="clients" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <p style="color: var(--text-secondary);">Waiting for tracking connection...</p>
+        </div>
+
+        <div class="main-view-container" id="mainView" style="display: none;">
+            <!-- Main Video natively rendered -->
+            <video id="remoteVideo" autoplay muted playsinline></video>
+
+            <!-- Transparent Canvas Overlay -->
+            <canvas id="canvas"></canvas>
+
+            <!-- Buyer PiP bubble -->
+            <div id="pipContainer"
+                style="position: absolute; top: 20px; right: 20px; width: 110px; height: 110px; z-index: 10; cursor: grab;"
+                onmousedown="dragStart(event)" ontouchstart="dragStart(event)">
+                <video id="localVideo"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 3px solid rgba(255,255,255,0.7); box-shadow: 0 5px 20px rgba(0,0,0,0.8); pointer-events: none; transform: scaleX(-1);"
+                    autoplay muted playsinline></video>
+                <canvas id="skeletonCanvas"
+                    style="position: absolute; top: -25px; left: -5px; width: 120px; height: 160px; border-radius: 50%; pointer-events: none; transform: scaleX(-1);"></canvas>
+            </div>
+
+            <!-- Overlay action buttons (Hidden during Garment selection) -->
+            <div id="overlayActions" class="overlay-actions">
+                <button id="tryOnToggle" class="btn-gradient btn-tryon">✨ Try-On ON</button>
+                <button id="headMaskToggle" class="btn-gradient btn-headmask">💇 Full Head: OFF</button>
+            </div>
+        </div>
+
+        <!-- Garment Gallery Container -->
+        <div id="garmentGallery" class="garment-gallery-container">
+            <div class="garment-gallery-title">
+                <span>👚</span> Available Garments
+            </div>
+            <div id="garmentList" class="garment-list">
+                <p style="color: #64748b; font-size: 12px; margin: 0; padding: 10px 0;">Waiting for seller snaps...</p>
+            </div>
+        </div>
+
+        <!-- Size Estimator Card -->
+        <div id="sizeEstimatorContainer" class="estimator-card" style="display: none;">
+            <div class="estimator-title">
+                <span>📐</span> Size Estimator
+            </div>
+
+            <!-- Height input -->
+            <div class="height-row">
+                <label>Your Height:</label>
+                <input type="number" id="userHeight" value="165" class="height-input"
+                    oninput="document.getElementById('heightSlider').value = this.value">
+                <span class="height-unit">cm</span>
+            </div>
+
+            <!-- Gradient range slider -->
+            <div class="slider-container">
+                <input type="range" id="heightSlider" class="height-slider" min="140" max="200" value="165"
+                    oninput="document.getElementById('userHeight').value = this.value">
+                <div class="slider-labels">
+                    <span>140</span>
+                    <span>200</span>
+                </div>
+            </div>
+
+            <!-- Scan button -->
+            <button id="startEstimatorBtn" class="btn-scan">Scan My Body</button>
+
+            <!-- Status -->
+            <div id="estimatorStatus" class="estimator-status"></div>
+
+            <!-- Measurements Grid -->
+            <div class="measure-grid">
+                <div class="measure-cell">
+                    <div class="measure-icon">👕</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Chest</span>
+                        <span class="measure-value" id="mChest">--</span>
+                    </div>
+                </div>
+                <div class="measure-cell">
+                    <div class="measure-icon">🩳</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Waist</span>
+                        <span class="measure-value" id="mWaist">--</span>
+                    </div>
+                </div>
+                <div class="measure-cell">
+                    <div class="measure-icon">🧍</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Shoulder</span>
+                        <span class="measure-value" id="mShoulder">--</span>
+                    </div>
+                </div>
+                <div class="measure-cell">
+                    <div class="measure-icon">💪</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Arm Length</span>
+                        <span class="measure-value" id="mArms">--</span>
+                    </div>
+                </div>
+                <div class="measure-cell">
+                    <div class="measure-icon">📏</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Torso</span>
+                        <span class="measure-value" id="mTorso">--</span>
+                    </div>
+                </div>
+                <div class="measure-cell size-cell">
+                    <div class="measure-icon">👔</div>
+                    <div class="measure-info">
+                        <span class="measure-label">Size</span>
+                        <span class="measure-value" id="mSize">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- SelfieSegmentation uses its own WASM binary — no conflict with Tasks Vision -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"
+        crossorigin="anonymous"></script>
+    <canvas id="segMaskCanvas" style="display:none;"></canvas>
+
+    <script>
+        window.socket = io();
+    </script>
+
+    <script src="/static/js/webrtc.js?v=4"></script>
+    <script src="/static/js/render.js?v=4"></script>
+    <!-- FaceMesh + PoseLandmarker both imported from @mediapipe/tasks-vision (unified WASM) -->
+    <script type="module" src="/static/js/buyer.js?v=7"></script>
+</body>
+
+</html>

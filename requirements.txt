@@ -1,0 +1,11 @@
+flask
+flask-socketio
+eventlet
+pyOpenSSL
+cryptography
+Pillow
+numpy
+onnxruntime
+flask-cors
+numpy<2.0.0
+mediapipe 

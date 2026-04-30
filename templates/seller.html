@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Try-On - Seller</title>
+    <link rel="stylesheet" href="/static/css/styles.css?v=4">
+</head>
+<body>
+    <div class="container home-container">
+        <h2>🎥 Seller Studio</h2>
+        <h3>Showcase your garments live</h3>
+
+        <div class="action-bar" id="actionBar">
+            <button id="startStreamBtn" onclick="startCamera()">📡 Start Streaming</button>
+        </div>
+
+        <div class="action-bar" id="snapBar" style="display: none; margin-top: 10px;">
+            <button id="snapGarmentBtn" onclick="snapGarment()" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%;">📸 Snap Garment</button>
+        </div>
+
+        <div id="streamStatus" style="display: none; padding: 12px; background: rgba(16, 185, 129, 0.15); color: #34d399; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3); text-align: center; font-weight: bold; letter-spacing: 1px; animation: pulseStatus 2s infinite; margin-top: 10px;">
+            🔴 LIVE STREAMING
+        </div>
+
+        <div class="clients-list" id="connectedBuyers" style="margin-top: 15px; display: none; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <h4 style="margin: 0 0 10px 0; color: #a5b4fc; font-size: 14px;">👥 Connected Buyers</h4>
+            <ul id="buyersList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                <li style='color: #64748b; font-size: 13px;'>Waiting for buyers...</li>
+            </ul>
+        </div>
+        
+        <style>
+            @keyframes pulseStatus {
+                0% { opacity: 0.8; }
+                50% { opacity: 1; text-shadow: 0 0 10px rgba(52, 211, 153, 0.6); }
+                100% { opacity: 0.8; }
+            }
+        </style>
+
+        <div class="video-wrapper" style="margin-top: 25px;">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-label">Mannequin Stream</div>
+        </div>
+
+        <!-- Extract Modal -->
+        <div id="extractModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: #1e293b; padding: 20px; border-radius: 12px; text-align: center; color: white; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="margin-top: 0;">Extract Garment</h3>
+                <img id="snapPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px;"/>
+                
+                <div style="margin-bottom: 15px; display: flex; justify-content: center; gap: 15px;">
+                    <label><input type="radio" name="gPart" value="upper" checked> Upper</label>
+                    <label><input type="radio" name="gPart" value="lower"> Lower</label>
+                    <label><input type="radio" name="gPart" value="full"> Full</label>
+                </div>
+                
+                <div>
+                    <button onclick="closeSnapModal()" style="padding: 10px 20px; border-radius: 8px; border: none; background: #64748b; color: white; cursor: pointer; font-weight: bold;">Cancel</button>
+                    <button id="extractBtn" onclick="processExtraction()" style="padding: 10px 20px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: bold; margin-left: 10px;">Extract</button>
+                </div>
+                
+                <div id="extractResult" style="display: none; margin-top: 15px;">
+                    <hr style="border-color: #334155; margin-bottom: 15px;"/>
+                    <img id="extractedGarmentPreview" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; background: rgba(0,0,0,0.5); border: 1px dashed rgba(255,255,255,0.2);"/>
+                    <br>
+                    <button onclick="sendToBuyers()" style="padding: 12px 15px; border-radius: 8px; border: none; background: #3b82f6; color: white; cursor: pointer; width: 100%; font-weight: bold; font-size: 15px;">📤 Send to Buyers</button>
+                </div>
+                
+                <div id="extractLoading" style="display: none; margin-top: 15px; color: #fbbf24; font-weight: bold; font-size: 15px;">⏳ Extracting... Please wait.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        window.socket = io();
+    </script>
+    <script src="/static/js/webrtc.js?v=4"></script>
+    <script src="/static/js/seller.js?v=4"></script>
+</body>
+</html>
