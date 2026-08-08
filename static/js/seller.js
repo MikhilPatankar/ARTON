@@ -1,7 +1,5 @@
-// Removed redundant socket declaration
 const video = document.getElementById("localVideo");
 
-// Start camera
 window.startCamera = async function () {
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -22,7 +20,6 @@ window.startCamera = async function () {
 
         socket.emit("join", { role: "seller" });
 
-        // Update UI to show LIVE status and hide button
         document.getElementById("actionBar").style.display = "none";
         document.getElementById("snapBar").style.display = "block";
         document.getElementById("streamStatus").style.display = "block";
@@ -35,7 +32,6 @@ window.startCamera = async function () {
     }
 };
 
-// Track connected buyers dynamically securely
 const activeBuyers = new Set();
 const buyersListEl = document.getElementById("buyersList");
 
@@ -62,7 +58,6 @@ function renderBuyers() {
     }
 }
 
-// When a buyer actively initiates an AR session
 socket.on("offer", data => {
     if (!activeBuyers.has(data.from)) {
         activeBuyers.add(data.from);
@@ -70,12 +65,10 @@ socket.on("offer", data => {
     }
 });
 
-// When ANY socket connects or disconnects (handles buyer dropouts automatically)
 socket.on("clients", list => {
     const currentClients = new Set(list.map(c => c.id));
     let changed = false;
     
-    // Remove buyers that dropped connection
     for (const buyerId of activeBuyers) {
         if (!currentClients.has(buyerId)) {
             activeBuyers.delete(buyerId);
@@ -86,9 +79,7 @@ socket.on("clients", list => {
     if (changed) renderBuyers();
 });
 
-// ==========================================
 // Garment Snap & Extract Logic
-// ==========================================
 window.snappedBlob = null;
 window.extractedGarmentB64 = null;
 
@@ -99,25 +90,21 @@ window.snapGarment = function() {
         return;
     }
     
-    // Create canvas to grab the current frame
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Convert to JPG blob
     canvas.toBlob(blob => {
         window.snappedBlob = blob;
         const url = URL.createObjectURL(blob);
         document.getElementById("snapPreview").src = url;
         
-        // Reset modal state
         document.getElementById("extractResult").style.display = "none";
         document.getElementById("extractLoading").style.display = "none";
         document.getElementById("extractBtn").style.display = "inline-block";
         
-        // Show modal
         document.getElementById("extractModal").style.display = "flex";
     }, "image/jpeg", 0.9);
 };
@@ -134,7 +121,6 @@ window.processExtraction = async function() {
     
     const part = document.querySelector('input[name="gPart"]:checked').value;
     
-    // Using multipart/form-data to send image file + part
     const formData = new FormData();
     formData.append("image", window.snappedBlob, "snap.jpg");
     formData.append("part", part);
@@ -167,7 +153,6 @@ window.sendToBuyers = function() {
     
     const part = document.querySelector('input[name="gPart"]:checked').value;
     
-    // Emit the new extracted garment to all connected buyers
     socket.emit("garment_snapshot", {
         image: window.extractedGarmentB64,
         part: part

@@ -1,8 +1,3 @@
-// ==========================================
-// MODE SYSTEM — Mutual exclusion for different features
-// Modes: 'idle' | 'face-swap' | 'garment' | 'size-estimation'
-// ALL MediaPipe now uses @mediapipe/tasks-vision (unified WASM)
-// ==========================================
 import {
     FaceLandmarker,
     PoseLandmarker,
@@ -22,9 +17,7 @@ window.useHeadMask = false;
 window.segMaskCanvas = null;
 window.buyerPoseLandmarks = null;
 
-// ==========================================
-// UNIFIED WASM RUNTIME — shared by all Tasks Vision models
-// ==========================================
+// UNIFIED WASM RUNTIME
 let visionWasm = null;
 
 async function getVisionWasm() {
@@ -38,10 +31,7 @@ async function getVisionWasm() {
     return visionWasm;
 }
 
-// ==========================================
-// FACELANDMARKER — replaces legacy @mediapipe/face_mesh
-// Both buyer + seller face detection in one instance
-// ==========================================
+// FACELANDMARKER
 let faceLandmarker = null;
 let faceLandmarkerLoading = false;
 let faceLoopRunning = false;
@@ -76,7 +66,6 @@ async function initFaceLandmarker() {
     }
 }
 
-// Detect buyer face from localVideo
 function faceLoop() {
     if (!faceLoopRunning || currentMode !== 'face-swap') return;
 
@@ -97,7 +86,6 @@ function faceLoop() {
     if (faceLoopRunning) requestAnimationFrame(faceLoop);
 }
 
-// Detect seller face from remoteVideo (separate instance to avoid mode conflicts)
 let faceLandmarkerSeller = null;
 
 async function initFaceLandmarkerSeller() {
@@ -165,10 +153,7 @@ function stopFaceLoops() {
     window.sellerLandmarks = null;
 }
 
-// ==========================================
-// SELFIE SEGMENTATION (Full Head Mask)
-// Using legacy @mediapipe/selfie_segmentation (separate WASM, no conflict)
-// ==========================================
+// SELFIE SEGMENTATION (Head Mask)
 let selfieSegmentation = null;
 let segRunning = false;
 
@@ -213,9 +198,7 @@ function stopSegLoop() {
     window.segMaskCanvas = null;
 }
 
-// ==========================================
-// POSELANDMARKER — for size estimation
-// ==========================================
+// POSELANDMARKER
 let poseLandmarker = null;
 let poseLandmarkerLoading = false;
 
@@ -238,7 +221,6 @@ async function initPoseLandmarker() {
         });
         console.log("✅ PoseLandmarker loaded successfully");
 
-        // Auto-start if user already clicked "Scan My Body" while loading
         if (isEstimatingSize && currentMode === 'size-estimation') {
             estimatorStatus.innerText = "⏳ Detecting pose...";
             estimatorStatus.style.color = "#fbbf24";
@@ -255,14 +237,10 @@ async function initPoseLandmarker() {
     }
 }
 
-// ==========================================
-// MODE SWITCHING
-// ==========================================
 function switchMode(newMode) {
     if (currentMode === newMode) return;
     console.log(`🔀 Mode switch: ${currentMode} → ${newMode}`);
 
-    // Tear down current mode
     switch (currentMode) {
         case 'face-swap':
             stopFaceLoops();
@@ -280,7 +258,6 @@ function switchMode(newMode) {
 
     currentMode = newMode;
 
-    // Set up new mode
     switch (newMode) {
         case 'face-swap':
             startFaceLoops();
@@ -290,14 +267,11 @@ function switchMode(newMode) {
             startBuyerPoseSender();
             break;
         case 'size-estimation':
-            // PoseLandmarker init handled by the button click
             break;
     }
 }
 
-// ==========================================
 // CAMERA START
-// ==========================================
 socket.emit("join", { role: "buyer" });
 
 window.startCamera = async function () {
@@ -318,13 +292,10 @@ window.startCamera = async function () {
         remoteVideo.srcObject = stream;
     };
 
-    // Default to face-swap mode
     switchMode('face-swap');
 };
 
-// ==========================================
 // SELLERS LIST
-// ==========================================
 let callingInProgress = false;
 
 socket.on("clients", list => {
@@ -386,9 +357,7 @@ socket.on("clients", list => {
     }
 });
 
-// ==========================================
 // FACE-SWAP TOGGLE
-// ==========================================
 const tryOnToggle = document.getElementById("tryOnToggle");
 if (tryOnToggle) {
     tryOnToggle.onclick = () => {
@@ -411,9 +380,7 @@ if (headMaskToggle) {
     };
 }
 
-// ==========================================
 // VIEW SWAPPING
-// ==========================================
 function swapViews(garmentActive) {
     const overlayActions = document.getElementById("overlayActions");
     const canvas = document.getElementById("canvas");
@@ -438,9 +405,7 @@ function swapViews(garmentActive) {
     localVideo.play().catch(e => console.log("Video play request failed:", e));
 }
 
-// ==========================================
 // GARMENT RECEIVE & GALLERY
-// ==========================================
 window.availableGarments = [];
 window.activeGarment = null;
 
@@ -509,9 +474,7 @@ function renderGarmentGallery() {
     });
 }
 
-// ==========================================
-// BUYER POSE FRAME SENDER (Garment mode — server-side)
-// ==========================================
+// BUYER POSE FRAME SENDER
 let buyerPoseSendInterval = null;
 const BUYER_POSE_FPS = 8;
 
@@ -549,9 +512,7 @@ socket.on("buyer_pose", (data) => {
     }
 });
 
-// ==========================================
 // RENDER LOOP
-// ==========================================
 function renderLoop() {
     const canvas = document.getElementById("canvas");
 
@@ -575,9 +536,7 @@ function renderLoop() {
     loop();
 }
 
-// ==========================================
-// SIZE ESTIMATOR — Measurement helpers
-// ==========================================
+// SIZE ESTIMATOR 
 let isEstimatingSize = false;
 let poseRafId = null;
 let lastVideoTime = -1;
@@ -603,6 +562,8 @@ function ellipseCircumference(a, b) {
 }
 
 function extractWorldMeasurements(wlm, poseLm) {
+    const shoulderM = dist3D(wlm[11], wlm[12]);
+    const hipM = dist3D(wlm[23], wlm[24]);
     const torsoM = dist3D(mid3D(wlm[11], wlm[12]), mid3D(wlm[23], wlm[24]));
 
     const leftArmM = dist3D(wlm[11], wlm[13]) + dist3D(wlm[13], wlm[15]);
@@ -644,6 +605,18 @@ function computeFinalMeasurements(samples, userHeightCm) {
     const torsoCm = parseFloat((avg.torsoM * scaleMultiplier * 100).toFixed(1));
     const armsCm = parseFloat((avg.armsM * scaleMultiplier * 100).toFixed(1));
 
+    const chestWidthM = avg.shoulderM * scaleMultiplier * 0.90;
+    const chestDepthM = chestWidthM * 0.65;
+    const chestCm = parseFloat((ellipseCircumference(chestWidthM / 2, chestDepthM / 2) * 100).toFixed(1));
+
+    const waistWidthM = avg.hipM * scaleMultiplier;
+    const waistDepthM = waistWidthM * 0.75;
+    const waistCm = parseFloat((ellipseCircumference(waistWidthM / 2, waistDepthM / 2) * 100).toFixed(1));
+
+    console.log("=== SIZE ESTIMATOR DEBUG ===");
+    console.log(`Samples: ${n}, Height: ${userHeightCm}cm, Scale: ${scaleMultiplier.toFixed(3)}x`);
+    console.log(`Shoulder: ${shoulderCm}cm, Torso: ${torsoCm}cm, Chest: ${chestCm}cm, Waist: ${waistCm}cm, Arms: ${armsCm}cm`);
+
     return { shoulderCm, torsoCm, chestCm, waistCm, armsCm };
 }
 
@@ -674,9 +647,7 @@ function mapSize(chestCm, userHeightCm) {
     return revMap[finalIndex];
 }
 
-// ==========================================
 // POSE RESULTS HANDLER
-// ==========================================
 function handlePoseResults(results) {
     if (!isEstimatingSize || currentMode !== 'size-estimation') return;
 
@@ -700,7 +671,9 @@ function handlePoseResults(results) {
     const hipVis = (lm[23].visibility + lm[24].visibility) / 2;
     const handVis = (lm[15].visibility + lm[16].visibility) / 2;
 
-    const handsInFrame = lm[15].y > 0.25 && lm[15].y < 0.65 && lm[16].y > 0.05 && lm[16].y < 0.65;
+    const hipsInFrame = lm[23].y < 0.95 && lm[24].y < 0.95;
+    const shouldersInFrame = lm[11].y > 0.05 && lm[12].y > 0.05;
+    const handsInFrame = lm[15].y > 0.05 && lm[15].y < 0.95 && lm[16].y > 0.05 && lm[16].y < 0.95;
 
     const isBodyValid = (shoulderVis > 0.5 && hipVis > 0.5 && handVis > 0.5 && hipsInFrame && shouldersInFrame && handsInFrame);
 
@@ -716,6 +689,7 @@ function handlePoseResults(results) {
     }
 
     const zDiff = wlm[11].z - wlm[12].z;
+    let angleDeg = Math.asin(Math.max(-1, Math.min(1, zDiff / 0.25))) * (180 / Math.PI);
     if (lm[11].x < lm[12].x) angleDeg = 180 - angleDeg;
     else if (angleDeg < 0) angleDeg = 360 + angleDeg;
     if (angleDeg > 180) angleDeg -= 360;
@@ -774,7 +748,6 @@ function handlePoseResults(results) {
             isEstimatingSize = false;
             setTimeout(() => { skelCtx.clearRect(0, 0, skeletonCanvas.width, skeletonCanvas.height); }, 3000);
 
-            // Return to face-swap after measurement
             switchMode('face-swap');
 
             window.stabilizationTimer = null;
@@ -784,9 +757,7 @@ function handlePoseResults(results) {
     }
 }
 
-// ==========================================
 // POSE LOOP & START BUTTON
-// ==========================================
 function poseLoop() {
     if (!isEstimatingSize || !poseLandmarker || currentMode !== 'size-estimation') return;
 
@@ -806,7 +777,6 @@ document.getElementById("startEstimatorBtn").addEventListener("click", () => {
     window.stabilizationTimer = null;
     window.stabilizationAngle = null;
 
-    // Switch to size-estimation (stops face loops)
     switchMode('size-estimation');
 
     if (!poseLandmarker) {
@@ -825,9 +795,7 @@ document.getElementById("startEstimatorBtn").addEventListener("click", () => {
     poseRafId = requestAnimationFrame(poseLoop);
 });
 
-// ==========================================
 // DRAGGABLE PIP BUBBLE
-// ==========================================
 let isDragging = false;
 let dragStartX, dragStartY;
 let initialLeft, initialTop;

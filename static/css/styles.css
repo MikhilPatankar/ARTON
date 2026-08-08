@@ -203,9 +203,9 @@ canvas.active {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    z-index: 2; /* Layered exactly above video */
+    z-index: 2;
     background: transparent;
-    pointer-events: none; /* Clicks pass through */
+    pointer-events: none;
 }
 
 .pip-video {
@@ -214,7 +214,7 @@ canvas.active {
     right: 20px;
     width: 110px;
     height: 110px;
-    border-radius: 50%; /* Perfect bubble shape */
+    border-radius: 50%;
     border: 3px solid rgba(255,255,255,0.7);
     box-shadow: 0 5px 20px rgba(0,0,0,0.8);
     object-fit: cover;

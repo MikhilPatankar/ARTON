@@ -341,13 +341,10 @@
         </div>
 
         <div class="main-view-container" id="mainView" style="display: none;">
-            <!-- Main Video natively rendered -->
             <video id="remoteVideo" autoplay muted playsinline></video>
 
-            <!-- Transparent Canvas Overlay -->
             <canvas id="canvas"></canvas>
 
-            <!-- Buyer PiP bubble -->
             <div id="pipContainer"
                 style="position: absolute; top: 20px; right: 20px; width: 110px; height: 110px; z-index: 10; cursor: grab;"
                 onmousedown="dragStart(event)" ontouchstart="dragStart(event)">
@@ -358,14 +355,12 @@
                     style="position: absolute; top: -25px; left: -5px; width: 120px; height: 160px; border-radius: 50%; pointer-events: none; transform: scaleX(-1);"></canvas>
             </div>
 
-            <!-- Overlay action buttons (Hidden during Garment selection) -->
             <div id="overlayActions" class="overlay-actions">
                 <button id="tryOnToggle" class="btn-gradient btn-tryon">✨ Try-On ON</button>
                 <button id="headMaskToggle" class="btn-gradient btn-headmask">💇 Full Head: OFF</button>
             </div>
         </div>
 
-        <!-- Garment Gallery Container -->
         <div id="garmentGallery" class="garment-gallery-container">
             <div class="garment-gallery-title">
                 <span>👚</span> Available Garments
@@ -375,13 +370,11 @@
             </div>
         </div>
 
-        <!-- Size Estimator Card -->
         <div id="sizeEstimatorContainer" class="estimator-card" style="display: none;">
             <div class="estimator-title">
                 <span>📐</span> Size Estimator
             </div>
 
-            <!-- Height input -->
             <div class="height-row">
                 <label>Your Height:</label>
                 <input type="number" id="userHeight" value="165" class="height-input"
@@ -389,7 +382,6 @@
                 <span class="height-unit">cm</span>
             </div>
 
-            <!-- Gradient range slider -->
             <div class="slider-container">
                 <input type="range" id="heightSlider" class="height-slider" min="140" max="200" value="165"
                     oninput="document.getElementById('userHeight').value = this.value">
@@ -399,13 +391,10 @@
                 </div>
             </div>
 
-            <!-- Scan button -->
             <button id="startEstimatorBtn" class="btn-scan">Scan My Body</button>
 
-            <!-- Status -->
             <div id="estimatorStatus" class="estimator-status"></div>
 
-            <!-- Measurements Grid -->
             <div class="measure-grid">
                 <div class="measure-cell">
                     <div class="measure-icon">👕</div>
@@ -454,9 +443,7 @@
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <!-- SelfieSegmentation uses its own WASM binary — no conflict with Tasks Vision -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"
-        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
     <canvas id="segMaskCanvas" style="display:none;"></canvas>
 
     <script>
@@ -465,7 +452,6 @@
 
     <script src="/static/js/webrtc.js?v=4"></script>
     <script src="/static/js/render.js?v=4"></script>
-    <!-- FaceMesh + PoseLandmarker both imported from @mediapipe/tasks-vision (unified WASM) -->
     <script type="module" src="/static/js/buyer.js?v=7"></script>
 </body>
 

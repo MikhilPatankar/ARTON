@@ -12,6 +12,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 socketio = SocketIO(app, cors_allowed_origins="*")
+model_loaded = False
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Model setup
@@ -23,14 +24,14 @@ def load_model():
     global ort_session
     if ort_session is not None:
         return
-    # if not MODEL_PATH.exists():
-    #     raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please ensure download is complete.")
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please ensure download is complete.")
     
-    # print(f"⏳ Loading cloth segmentation model from {MODEL_PATH}...")
-    # ort_session = ort.InferenceSession(
-    #     str(MODEL_PATH),
-    #     providers=["CPUExecutionProvider"]
-    # )
+    print(f"⏳ Loading cloth segmentation model from {MODEL_PATH}...")
+    ort_session = ort.InferenceSession(
+        str(MODEL_PATH),
+        providers=["CPUExecutionProvider"]
+    )
     print("✅ Cloth segmentation model ready!")
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ def postprocess(mask_tensor: np.ndarray, orig_size: tuple, part: str) -> Image.I
         mask = probs[1] + probs[3]
     elif part == "lower":
         mask = probs[2]
-    else: # "full"
+    else:
         mask = 1.0 - probs[0] 
         
     mask = np.clip((mask - 0.2) / 0.6, 0, 1)
@@ -140,11 +141,13 @@ def extract_route():
     if "image" not in request.files:
         return jsonify({"error": "No image field"}), 400
     
-    part = request.form.get("part", "full") # upper, lower, full
+    part = request.form.get("part", "full")
     file = request.files["image"]
     
     try:
-        load_model()
+        if not model_loaded:
+            load_model()
+        
         img = Image.open(io.BytesIO(file.read())).convert("RGBA")
         result = extract(img, part)
         
@@ -211,7 +214,6 @@ def on_garment_snapshot(data):
     except Exception as e:
         print(f"⚠️ Pose detection on garment failed: {e}")
     
-    # Broadcast garment WITH server-computed landmarks
     emit("garment_snapshot", {
         "image": image_b64,
         "part": part,
@@ -228,7 +230,7 @@ def on_buyer_frame(data):
         if landmarks:
             emit("buyer_pose", {"landmarks": landmarks})
     except Exception as e:
-        pass  # Silent fail to avoid flooding logs
+        pass
 
 @socketio.on("disconnect")
 def on_disconnect():
@@ -244,4 +246,6 @@ if __name__ == "__main__":
         from werkzeug.serving import make_ssl_devcert
         make_ssl_devcert('./server', host='0.0.0.0')
         
+    load_model()
+    model_loaded = True
     socketio.run(app, host="0.0.0.0", port=5500, certfile='server.crt', keyfile='server.key')

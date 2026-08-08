@@ -1,9 +1,8 @@
-// Uses global socket from HTML
 const socket = window.socket;
 
 let pc = null;
 let iceQueue = []; 
-let isRemoteSet = false; // Explicit lock for setRemoteDescription
+let isRemoteSet = false;
 
 async function flushIceQueue() {
     while (iceQueue.length > 0) {
@@ -16,7 +15,6 @@ async function flushIceQueue() {
     }
 }
 
-// Create peer connection
 async function createPeerConnection(targetId, localStream, onTrack) {
     isRemoteSet = false;
     pc = new RTCPeerConnection({
@@ -43,9 +41,8 @@ async function createPeerConnection(targetId, localStream, onTrack) {
     return pc;
 }
 
-// Call a user
 async function callUser(targetId, localStream, onTrack) {
-    iceQueue = []; // Clear queue on outbound call
+    iceQueue = [];
     await createPeerConnection(targetId, localStream, onTrack);
 
     const offer = await pc.createOffer();
@@ -57,13 +54,12 @@ async function callUser(targetId, localStream, onTrack) {
     });
 }
 
-// Receive offer
 socket.on("offer", async data => {
-    iceQueue = []; // Clear queue on inbound call
+    iceQueue = [];
     await createPeerConnection(data.from, window.localStream, window.onTrack);
 
     await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    isRemoteSet = true; // Lock opened!
+    isRemoteSet = true;
     await flushIceQueue(); 
 
     const answer = await pc.createAnswer();
@@ -75,20 +71,17 @@ socket.on("offer", async data => {
     });
 });
 
-// Receive answer
 socket.on("answer", async data => {
     if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        isRemoteSet = true; // Lock opened!
+        isRemoteSet = true;
         await flushIceQueue();
     }
 });
 
-// Receive ICE
 socket.on("ice", async data => {
     if (data.candidate) {
         try {
-            // Buffer ALL candidates arriving before the async remote description promise fully resolves
             if (pc && isRemoteSet) {
                 await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
             } else {
