@@ -25,7 +25,12 @@ def load_model():
     if ort_session is not None:
         return
     if not MODEL_PATH.exists():
-        raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please ensure download is complete.")
+        print(f"⏳ Downloading model to {MODEL_PATH}...")
+        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        import urllib.request
+        url = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net_cloth_seg.onnx"
+        urllib.request.urlretrieve(url, MODEL_PATH)
+        print("✅ Download complete!")
     
     print(f"⏳ Loading cloth segmentation model from {MODEL_PATH}...")
     ort_session = ort.InferenceSession(
